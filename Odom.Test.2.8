@@ -1,0 +1,287 @@
+#include "vex.h"
+#include <cmath>
+
+using namespace vex;
+
+// A global instance of vex::brain used for printing to the V5 brain screen
+vex::brain       Brain;
+
+motor leftfrontmotor = motor(PORT1, ratio18_1, false);
+motor leftbackmotor = motor(PORT2, ratio18_1, false);
+motor lefttopmotor = motor(PORT3, ratio18_1, false);
+motor rightfrontmotor = motor(PORT8, ratio18_1, true);
+motor rightbackmotor = motor(PORT9, ratio18_1, true);
+motor righttopmotor = motor(PORT10, ratio18_1, true);
+motor intake = motor(PORT21, ratio18_1, false);
+motor arm = motor(PORT4, ratio18_1, false);
+
+rotation track_L = rotation(PORT11);
+rotation track_R = rotation(PORT11);
+
+digital_out pneum = digital_out(Brain.ThreeWirePort.A);
+digital_out pneum2 = digital_out(Brain.ThreeWirePort.B);
+inertial inert = inertial(PORT5);
+controller control = controller();
+// define your global instances of motors and other devices here
+
+float wheeldiam = 2.5;
+
+void odometry(float orient){
+  float trackL;
+  float trackR;
+  float changeL;
+  float changeR;
+  float prevL = 0;
+  float prevR = 0;
+  float totaldistL;
+  float totaldistR;
+  float currentorient;
+  //distance from tracking center to wheels for SL and SR
+  float SL = 3.5;
+  float SR = 3.5;
+  float newangle;
+  trackL = track_L.position(degrees);
+  trackR = track_R.position(degrees);
+  changeL = (wheeldiam*3.1415)*(trackL/360);
+  changeR = (wheeldiam*3.1415)*(trackR/360);
+  prevL = changeL+prevL;
+  prevR = changeR+prevR;
+  totaldistL = prevL;
+  totaldistR = prevR;
+  currentorient = orient + ((prevL-prevR)/(SL-SR));
+  newangle = currentorient - orient;
+  if(newangle == 0){
+    
+  }
+}
+
+void turnRight(int units){
+    inert.resetRotation();
+    float lasterror = -units;
+    float placeholder = 0;
+    while(true){
+        float error = -units + inert.rotation(degrees);
+        float derivative = error - lasterror;
+        float power = error*0.5 + derivative*0.5;
+        if(error < 0){
+            placeholder = error*-1;
+        }
+        else{
+            placeholder = error;
+        }
+        if (placeholder < 3){
+            break;
+        }
+        leftfrontmotor.spin(forward, power, pct);
+        leftbackmotor.spin(forward, power, pct);
+        rightfrontmotor.spin(reverse, power, pct);
+        rightbackmotor.spin(reverse, power, pct);
+        lasterror = error;
+        wait(10, msec);
+    }
+    leftfrontmotor.stop();
+    leftbackmotor.stop();
+    rightfrontmotor.stop();
+    rightbackmotor.stop();
+}
+
+void turnLeft(int units){
+    inert.resetRotation();
+    float lasterror = -units;
+    float asdfgh = 0;
+    while(true){
+        float error = -units - inert.rotation(degrees);
+        float derivative = error - lasterror;
+        float power = error*0.3 + derivative*0.5;
+        if(error < 0){
+            asdfgh = error*-1;
+        }
+        else{
+            asdfgh = error;
+        }
+        if (asdfgh < 4){
+            break;
+        }
+        leftfrontmotor.spin(reverse, power, pct);
+        leftbackmotor.spin(reverse, power, pct);
+        rightfrontmotor.spin(forward, power, pct);
+        rightbackmotor.spin(forward, power, pct);
+        lasterror = error;
+        wait(10, msec);
+    }
+    leftfrontmotor.stop();
+    leftbackmotor.stop();
+    rightfrontmotor.stop();
+    rightbackmotor.stop();
+}
+
+
+int driveForward(int units){
+    Brain.Screen.setCursor(1,1);
+    Brain.Screen.clearScreen();
+    float lasterror = units;
+    float asdfgh = 0;
+    while(true){
+        float error = units - leftfrontmotor.position(degrees);
+        float derivative = error - lasterror;
+        float power = error*0.15 + derivative*0.12;
+        if(error < 0){
+            asdfgh = error*-1;
+        }
+        else{
+            asdfgh = error;
+        }
+        if (asdfgh < 10){
+            break;
+        }
+        // leftfrontmotor.spin(forward, power, pct);
+        lefttopmotor.spin(forward, power, pct);
+        leftbackmotor.spin(forward, power, pct);
+        // rightfrontmotor.spin(forward, power, pct);
+        righttopmotor.spin(forward, power, pct);
+        rightbackmotor.spin(forward, power, pct);
+        lasterror = error;
+        wait(10, msec);
+    }
+    leftbackmotor.stop();
+    leftfrontmotor.stop();
+    lefttopmotor.stop();
+    rightfrontmotor.stop();
+     rightfrontmotor.stop();
+    righttopmotor.stop();
+    return  0;
+}
+
+void driveReverse(int units){
+    leftfrontmotor.resetPosition();
+    float lasterror = units;
+    float asdfgh = 0;
+    while(true){
+        float error = units + leftfrontmotor.position(degrees);
+        float derivative = error - lasterror;
+        float power = error*0.2 + derivative*0.15;
+        if(error < 0){
+            asdfgh = error*-1;
+        }
+        else{
+            asdfgh = error;
+        }
+        if (asdfgh < 10){
+            break;
+        }
+        // leftfrontmotor.spin(reverse, power, pct);
+        lefttopmotor.spin(reverse, power, pct);
+        leftbackmotor.spin(reverse, power, pct);
+        // rightfrontmotor.spin(reverse, power, pct);
+        righttopmotor.spin(reverse, power, pct);
+        rightbackmotor.spin(reverse, power, pct);
+        lasterror = error;
+        wait(10, msec);
+    }
+    leftbackmotor.stop();
+    leftfrontmotor.stop();
+    lefttopmotor.stop();
+    rightfrontmotor.stop();
+     rightfrontmotor.stop();
+    righttopmotor.stop();
+    // turnLeft(1);
+}
+
+void badturnLeft(int units){
+    lefttopmotor.spin(reverse, 100, percent);
+    lefttopmotor.spin(reverse, 100, percent);
+    lefttopmotor.spin(reverse, 100, percent);
+    wait(units, seconds);
+}
+
+int brainDisplay(void){
+    while(true){
+        Brain.Screen.clearScreen();
+        Brain.Screen.setCursor(1,1); //row-column yx
+        Brain.Screen.print("Inertial Reading: %f", inert.rotation(degrees));
+        wait(10,msec);
+    }
+    return(0);
+}
+
+int someFunc() {
+    wait(1, seconds);
+    intake.stop();
+    return 0;
+}
+
+void calibrate(){
+    inert.calibrate();
+    wait(3, seconds);
+}
+
+
+int main() {
+    thread thrd(brainDisplay);
+
+    leftfrontmotor.spin(forward, 75, percent);
+    rightfrontmotor.spin(forward,75, percent);
+
+    wait(2, seconds);
+
+    leftfrontmotor.stop();
+    rightfrontmotor.stop();
+
+
+
+    //AUTON SIDE LEFT
+    // calibrate();
+    // intake.spin(forward, 100, percent);
+    // thread t1(someFunc);
+    // driveForward(435);
+    // pneum.set(true); 
+    // intake.spin(forward, 100, percent);
+    // turnRight(66);
+    // driveReverse(230);
+    // wait(2,seconds);
+    // driveForward(20);
+    // intake.stop();
+    // turnRight(140);
+    // driveReverse(170);
+
+    // AUTON SIDE RIGHT
+    // calibrate();
+    // intake.spin(forward, 100, percent);
+    // thread t1(someFunc);
+    // driveForward(435);
+    // pneum.set(true); 
+    // intake.spin(forward, 100, percent);
+    // turnLeft(98);
+    // driveReverse(220);
+    // wait(2,seconds);
+    // driveForward(150);
+    // intake.stop();
+    // turnLeft(140);
+    // driveReverse(200);
+
+    //AUTON SKILLS (RIGHT)
+    calibrate();
+    pneum.set(false);
+    thread t1(someFunc);
+    driveForward(50);
+    pneum.set(true); 
+    intake.spin(forward, 100, percent);
+    driveForward(100);
+    turnLeft(160);
+    driveReverse(310);
+    wait(1, seconds);
+    turnLeft(72);
+    driveReverse(280);
+    turnLeft(90);
+    driveReverse(200);
+    turnLeft(45);
+    driveReverse(50);
+    driveForward(20);
+    turnRight(90);
+    driveReverse(40);
+
+
+    
+
+
+}
